@@ -23,7 +23,7 @@ public class JwtConfig {
     private final String issuer;
 
     public JwtConfig(AppProperties props) {
-        byte[] bytes = Base64.getDecoder().decode(props.jwt().secret());
+        byte[] bytes = Base64.getMimeDecoder().decode(props.jwt().secret().trim());
         if (bytes.length < 32) {
             throw new IllegalStateException("JWT_SECRET must be at least 32 bytes (base64). Use: openssl rand -base64 48");
         }
