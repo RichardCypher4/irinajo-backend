@@ -1,0 +1,120 @@
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework      # Railway terminates TLS and sends X-Forwarded-* headers
+  compression:
+    enabled: true
+    min-response-size: 512
+    mime-types: application/json,text/html,text/plain,application/zip,application/gpx+xml
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: irinajo-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    # Railway Postgres exposes PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:irinajo}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:postgres}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 5MB          # voice packs (~1.2 MB) via the admin API
+      max-request-size: 6MB
+  task:
+    scheduling:
+      pool:
+        size: 4                   # geocoding job runs slowly (Nominatim 1 req/s); keep other jobs on time
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    com.irinajo: INFO
+
+irinajo:
+  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  require-https: ${REQUIRE_HTTPS:false}
+  jwt:
+    # 32+ random bytes, base64. Generate with: openssl rand -base64 48
+    secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1kZXYtb25seS1zZWNyZXQtY2hhbmdlLW1lIQ==}
+    issuer: irinajo
+    access-ttl-minutes: 15
+    refresh-ttl-days: 60
+  otp:
+    pepper: ${OTP_PEPPER:dev-pepper-change-me}
+    ttl-minutes: 10
+    max-attempts: 5
+    resend-seconds: 60
+    per-phone-per-hour: 5
+    per-device-per-hour: 8
+    per-ip-per-hour: 20
+    alert-threshold-per-hour: ${OTP_ALERT_THRESHOLD:500}
+    alert-webhook-url: ${ALERT_WEBHOOK_URL:}
+    # Test numbers that always get a fixed code (dev/staging only). Format: +2348000000001:123456,...
+    test-numbers: ${OTP_TEST_NUMBERS:}
+  sms:
+    provider: ${SMS_PROVIDER:log}         # log | termii
+    termii-api-key: ${TERMII_API_KEY:}
+    termii-sender-id: ${TERMII_SENDER_ID:IrinAjo}
+    termii-base-url: ${TERMII_BASE_URL:https://api.ng.termii.com}
+  whatsapp:
+    enabled: ${WHATSAPP_ENABLED:false}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    template-name: ${WHATSAPP_TEMPLATE_NAME:irinajo_otp}
+  google:
+    # Comma-separated OAuth client IDs (Android, iOS, web) whose ID tokens we accept
+    client-ids: ${GOOGLE_CLIENT_IDS:}
+  apple:
+    # Comma-separated: iOS bundle ID (and Services ID if you add web sign-in)
+    client-ids: ${APPLE_CLIENT_IDS:}
+  storage:
+    endpoint: ${S3_ENDPOINT:}               # e.g. https://<account>.r2.cloudflarestorage.com
+    region: ${S3_REGION:auto}
+    bucket: ${S3_BUCKET:irinajo}
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
+    cdn-base-url: ${CDN_BASE_URL:}          # e.g. https://cdn.irinajo.ng
+  geocoding:
+    enabled: ${GEOCODING_ENABLED:true}
+    nominatim-url: ${NOMINATIM_URL:https://nominatim.openstreetmap.org}
+    overpass-url: ${OVERPASS_URL:https://overpass-api.de/api/interpreter}
+    user-agent: ${GEOCODING_USER_AGENT:IrinAjo/1.0 (support@irinajo.ng)}
+  maps:
+    mapbox-token: ${MAPBOX_TOKEN:}          # static map images for the tracking page
+  routing:
+    graphhopper-key: ${GRAPHHOPPER_KEY:}    # optional: generated loop suggestions
+  weather:
+    base-url: ${WEATHER_BASE_URL:https://api.open-meteo.com/v1/forecast}
+    api-key: ${WEATHER_API_KEY:}

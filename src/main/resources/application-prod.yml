@@ -1,0 +1,10 @@
+irinajo:
+  require-https: true
+  jwt:
+    secret: ${JWT_SECRET}      # no default: the app refuses to start without it
+  otp:
+    pepper: ${OTP_PEPPER}
+    test-numbers: ""           # never any fixed codes in production
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}

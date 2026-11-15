@@ -1,0 +1,8 @@
+irinajo:
+  otp:
+    test-numbers: ${OTP_TEST_NUMBERS:+2348000000001:123456,+2348000000002:123456}
+  sms:
+    provider: log
+logging:
+  level:
+    com.irinajo: DEBUG

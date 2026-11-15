@@ -1,0 +1,8 @@
+irinajo:
+  require-https: true
+  jwt:
+    secret: ${JWT_SECRET}
+  otp:
+    pepper: ${OTP_PEPPER}
+    # Staging keeps fixed-code test numbers so the app team can sign in without real SMS
+    test-numbers: ${OTP_TEST_NUMBERS:+2348000000001:123456,+2348000000002:123456,+2348000000003:123456}
