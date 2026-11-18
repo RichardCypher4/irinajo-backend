@@ -23,7 +23,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Runs before Spring Security:
  *  1. HTTPS only (Railway terminates TLS; plain-http requests arrive with X-Forwarded-Proto: http).
- *  2. Per-IP rate limits (stricter on /auth).
+ *  2. Per-IP rate limits (stricter on /auth), and per-device limits on the public explore routes.
  *  3. Accepts gzip-compressed request bodies (Content-Encoding: gzip), with a size cap against zip bombs.
  */
 @Component
@@ -60,6 +60,17 @@ public class EdgeFilter extends OncePerRequestFilter {
             res.setHeader("Retry-After", String.valueOf(wait));
             reject(res, 429, "RATE_LIMITED", "Too many requests, slow down", true, wait);
             return;
+        }
+
+        boolean publicExplore = path.startsWith("/walks/") || path.equals("/routes/suggest");
+        String device = req.getHeader("X-Device-Id");
+        if (publicExplore && device != null && !device.isBlank()) {
+            int w = limiter.hit("dev-explore:" + device, 60, 60);
+            if (w > 0) {
+                res.setHeader("Retry-After", String.valueOf(w));
+                reject(res, 429, "RATE_LIMITED", "Too many requests, slow down", true, w);
+                return;
+            }
         }
 
         String enc = req.getHeader("Content-Encoding");

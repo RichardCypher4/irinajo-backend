@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,34 +37,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtDecoder jwtDecoder) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)            // stateless token API, no cookies
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .logout(AbstractHttpConfigurer::disable)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(a -> a
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/t/**").permitAll()                 // public Walk Safe tracking page
-                .requestMatchers("/account/delete", "/account/delete/**").permitAll() // Google Play web deletion page
-                .requestMatchers("/robots.txt", "/error").permitAll()
-                .requestMatchers("/actuator/health/**", "/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.GET, "/content/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated())
-            .oauth2ResourceServer(o -> o
-                .bearerTokenResolver(tokenResolver())
-                .jwt(j -> j.decoder(jwtDecoder).jwtAuthenticationConverter(jwtAuthConverter()))
-                .authenticationEntryPoint(entryPoint()))
-            .exceptionHandling(e -> e
-                .authenticationEntryPoint(entryPoint())
-                .accessDeniedHandler(deniedHandler()))
-            .headers(h -> h
-                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000))
-                .frameOptions(f -> f.deny())
-                .contentTypeOptions(c -> {})
-                .referrerPolicy(r -> r.policy(
-                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)));
+                .csrf(AbstractHttpConfigurer::disable)            // stateless token API, no cookies
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(Customizer.withDefaults())                      // only has an effect on dev/staging (CorsConfig)
+                .authorizeHttpRequests(a -> a
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/t/**").permitAll()                 // public Walk Safe tracking page
+                        .requestMatchers("/account/delete", "/account/delete/**").permitAll() // Google Play web deletion page
+                        .requestMatchers("/robots.txt", "/error").permitAll()
+                        .requestMatchers("/actuator/health/**", "/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/content/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/walks/nearby", "/walks/search").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/routes/suggest").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(o -> o
+                        .bearerTokenResolver(tokenResolver())
+                        .jwt(j -> j.decoder(jwtDecoder).jwtAuthenticationConverter(jwtAuthConverter()))
+                        .authenticationEntryPoint(entryPoint()))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(entryPoint())
+                        .accessDeniedHandler(deniedHandler()))
+                .headers(h -> h
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000))
+                        .frameOptions(f -> f.deny())
+                        .contentTypeOptions(c -> {})
+                        .referrerPolicy(r -> r.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)));
         return http.build();
     }
 

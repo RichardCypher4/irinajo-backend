@@ -34,7 +34,7 @@ public class Profile {
     private String language = "en";
 
     @Column(name = "daily_goal_km")
-    private BigDecimal dailyGoalKm = new BigDecimal("3.0");
+    private BigDecimal dailyGoalKm = new BigDecimal("4.0");
 
     @Column(name = "weight_kg")
     private BigDecimal weightKg;

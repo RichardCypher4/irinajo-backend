@@ -1,0 +1,1 @@
+ALTER TABLE profiles ALTER COLUMN daily_goal_km SET DEFAULT 4.0;
